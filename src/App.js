@@ -141,12 +141,7 @@ function LoginScreen({ onLogin }) {
           {loading ? "Accesso in corso…" : "Accedi →"}
         </button>
 
-        <div style={S.hint}>
-        <strong>Account di test:</strong><br />
-dani@spesometro.it / A7kP2xQ9Lm4Z<br />
-sergiu@spesometro.it / r3D8vN6bX1Qa<br />
-sofia@spesometro.it / T9mL5cW2pH8s
-        </div>
+
       </div>
     </div>
   );
