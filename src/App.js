@@ -1,5 +1,158 @@
 import { useState, useEffect, useRef } from "react";
 
+// ── MOCK AUTH ────────────────────────────────────────────────────────────────
+// Utenti mockati — sostituisci con Supabase Auth quando pronto
+const MOCK_USERS = [
+  { id: "user_dani", email: "dani@spesometro.it", password: "A7kP2xQ9Lm4Z", name: "Dani" },
+  { id: "user_sergiu", email: "sergiu@spesometro.it", password: "r3D8vN6bX1Qa", name: "Sophie" },
+  { id: "user_sofia", email: "sofia@spesometro.it", password: "T9mL5cW2pH8s", name: "Sergiu" },
+];
+
+const SESSION_KEY = "spesometro_session";
+
+function getSession() {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return null;
+}
+function setSession(user) {
+  try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(user)); } catch {}
+}
+function clearSession() {
+  try { sessionStorage.removeItem(SESSION_KEY); } catch {}
+}
+
+// ── DATI PER UTENTE ──────────────────────────────────────────────────────────
+function userStorageKey(userId) { return `spesometro_v2_${userId}`; }
+function loadData(userId) {
+  try {
+    const raw = localStorage.getItem(userStorageKey(userId));
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return { expenses: [], income: {}, recurring: [] };
+}
+function saveData(userId, d) {
+  try { localStorage.setItem(userStorageKey(userId), JSON.stringify(d)); } catch {}
+}
+
+// ── SCHERMATA DI LOGIN ───────────────────────────────────────────────────────
+function LoginScreen({ onLogin }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showPw, setShowPw] = useState(false);
+
+  function handleLogin() {
+    setError("");
+    setLoading(true);
+    // Simula latenza di rete (rimuovi con Supabase)
+    debugger
+    setTimeout(() => {
+    const user = MOCK_USERS.find(
+  u =>
+    u.email.toLowerCase() === email.trim().toLowerCase() &&
+    u.password === password.trim()
+);
+      if (user) {
+        const session = { id: user.id, name: user.name, email: user.email };
+        setSession(session);
+        onLogin(session);
+      } else {
+        setError("Email o password non corretti.");
+      }
+      setLoading(false);
+    }, 600);
+  }
+
+  const S = {
+    wrap: {
+      minHeight: "100vh",
+      background: "#F7F6F2",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontFamily: "'DM Sans','Segoe UI',sans-serif",
+      padding: "1rem",
+    },
+    card: {
+      background: "#fff",
+      borderRadius: 24,
+      padding: "2.5rem 2rem",
+      width: "100%",
+      maxWidth: 400,
+      boxShadow: "0 4px 40px rgba(0,0,0,0.08)",
+      border: "1px solid #ebebeb",
+    },
+    logo: { fontSize: 32, marginBottom: 8 },
+    title: { fontSize: 22, fontWeight: 700, color: "#1a1a18", marginBottom: 4 },
+    subtitle: { fontSize: 14, color: "#888", marginBottom: "2rem" },
+    label: { fontSize: 11, fontWeight: 600, color: "#aaa", marginBottom: 5, display: "block", textTransform: "uppercase", letterSpacing: "0.06em" },
+    input: { width: "100%", padding: "11px 13px", borderRadius: 10, border: "1.5px solid #e0e0e0", fontSize: 14, fontFamily: "inherit", background: "#fafafa", color: "#1a1a18", boxSizing: "border-box", marginBottom: "1rem" },
+    btn: { width: "100%", padding: "12px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 600, background: "#1a1a18", color: "#fff", marginTop: 8, transition: "opacity .15s" },
+    error: { background: "#FCEBEB", color: "#A32D2D", borderRadius: 10, padding: "10px 14px", fontSize: 13, marginBottom: "1rem" },
+    hint: { fontSize: 12, color: "#bbb", marginTop: "1.5rem", lineHeight: 1.6 },
+    pwWrap: { position: "relative" },
+    pwToggle: { position: "absolute", right: 12, top: "50%", transform: "translateY(-70%)", background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: 13 },
+  };
+
+  return (
+    <div style={S.wrap}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap'); *{box-sizing:border-box} input:focus{border-color:#1a1a18!important;outline:none;box-shadow:0 0 0 3px rgba(26,26,24,.07)}`}</style>
+      <div style={S.card}>
+        <div style={S.logo}>💰</div>
+        <div style={S.title}>Spesometro</div>
+        <div style={S.subtitle}>Accedi per gestire le tue finanze</div>
+
+        {error && <div style={S.error}>⚠ {error}</div>}
+
+        <div>
+          <label style={S.label}>Email</label>
+          <input
+            style={S.input}
+            type="email"
+            placeholder="marco@spesometro.it"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && handleLogin()}
+            autoFocus
+          />
+        </div>
+        <div>
+          <label style={S.label}>Password</label>
+          <div style={S.pwWrap}>
+            <input
+              style={{ ...S.input, paddingRight: 44 }}
+              type={showPw ? "text" : "password"}
+              placeholder="••••••••"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleLogin()}
+            />
+            <button style={S.pwToggle} onClick={() => setShowPw(v => !v)} tabIndex={-1}>
+              {showPw ? "Nascondi" : "Mostra"}
+            </button>
+          </div>
+        </div>
+
+        <button style={{ ...S.btn, opacity: loading ? 0.6 : 1 }} onClick={handleLogin} disabled={loading}>
+          {loading ? "Accesso in corso…" : "Accedi →"}
+        </button>
+
+        <div style={S.hint}>
+        <strong>Account di test:</strong><br />
+dani@spesometro.it / A7kP2xQ9Lm4Z<br />
+sergiu@spesometro.it / r3D8vN6bX1Qa<br />
+sofia@spesometro.it / T9mL5cW2pH8s
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── APP PRINCIPALE ───────────────────────────────────────────────────────────
 const CATEGORIES = [
   { id: "casa", label: "Casa", icon: "🏠", color: "#5DCAA5" },
   { id: "cibo", label: "Cibo", icon: "🍕", color: "#EF9F27" },
@@ -25,13 +178,6 @@ function addMonths(y, m, n) {
   return { year: d.getFullYear(), month: d.getMonth() };
 }
 
-const STORAGE_KEY = "spesometro_v2";
-function loadData() {
-  try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) return JSON.parse(raw); } catch {}
-  return { expenses: [], income: {}, recurring: [] };
-}
-function saveData(d) { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch {} }
-
 function getRecurringForMonth(recurring, monthKey) {
   return recurring.filter(r => {
     if (r.startMonth > monthKey) return false;
@@ -40,9 +186,9 @@ function getRecurringForMonth(recurring, monthKey) {
   });
 }
 
-export default function App() {
+function MainApp({ user, onLogout }) {
   const now = new Date();
-  const [data, setData] = useState(loadData);
+  const [data, setData] = useState(() => loadData(user.id));
   const [view, setView] = useState("dashboard");
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
@@ -59,7 +205,7 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
 
-  useEffect(() => { saveData(data); }, [data]);
+  useEffect(() => { saveData(user.id, data); }, [data, user.id]);
 
   const monthKey = toMonthKey(selectedYear, selectedMonth);
   const manualExpenses = data.expenses.filter(e => {
@@ -246,8 +392,30 @@ export default function App() {
             {i.count > 0 && <span style={{ marginLeft: "auto", background: "#2e2e2b", color: "#888", borderRadius: 20, fontSize: 11, padding: "1px 7px" }}>{i.count}</span>}
           </button>
         ))}
+
         <div style={{ flex: 1 }} />
-        <div style={{ fontSize: 11, color: "#444", lineHeight: 1.8 }}>
+
+        {/* Sezione utente in fondo alla sidebar */}
+        <div style={{ borderTop: "1px solid #2a2a27", paddingTop: "1rem", marginTop: "0.5rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#2e2e2b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 600, color: "#fff", flexShrink: 0 }}>
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: "#fff" }}>{user.name}</div>
+              <div style={{ fontSize: 11, color: "#555", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 130 }}>{user.email}</div>
+            </div>
+          </div>
+          <button
+            onClick={onLogout}
+            className="nav-btn"
+            style={{ ...S.nav(false), width: "100%", fontSize: 13, color: "#666" }}
+          >
+            <span>↩</span> Esci
+          </button>
+        </div>
+
+        <div style={{ fontSize: 11, color: "#444", lineHeight: 1.8, marginTop: 8 }}>
           {manualExpenses.length} spese manuali<br />
           {activeRecurring.length} fisse attive
         </div>
@@ -617,4 +785,24 @@ export default function App() {
       {toast && <div style={S.toast(toast.type)}>{toast.msg}</div>}
     </div>
   );
+}
+
+// ── ROOT COMPONENT ───────────────────────────────────────────────────────────
+export default function App() {
+  const [user, setUser] = useState(() => getSession());
+
+  function handleLogin(session) {
+    setUser(session);
+  }
+
+  function handleLogout() {
+    clearSession();
+    setUser(null);
+  }
+
+  if (!user) {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
+
+  return <MainApp key={user.id} user={user} onLogout={handleLogout} />;
 }
