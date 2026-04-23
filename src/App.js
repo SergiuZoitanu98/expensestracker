@@ -6,6 +6,7 @@ const MOCK_USERS = [
   { id: "user_dani", email: "dani@spesometro.it", password: "A7kP2xQ9Lm4Z", name: "Dani" },
   { id: "user_sergiu", email: "sergiu@spesometro.it", password: "r3D8vN6bX1Qa", name: "Sergiu" },
   { id: "user_sofia", email: "sofia@spesometro.it", password: "T9mL5cW2pH8s", name: "Sophie" },
+  { id: "user_andrei", email: "andrei@spesometro.it", password: "T9mL5cW2pH8s", name: "Andrei" },
 ];
 
 const SESSION_KEY = "spesometro_session";
