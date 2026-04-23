@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 
 // ── MOCK AUTH ────────────────────────────────────────────────────────────────
-// Utenti mockati — sostituisci con Supabase Auth quando pronto
 const MOCK_USERS = [
   { id: "user_dani", email: "dani@spesometro.it", password: "A7kP2xQ9Lm4Z", name: "Dani" },
   { id: "user_sergiu", email: "sergiu@spesometro.it", password: "r3D8vN6bX1Qa", name: "Sergiu" },
@@ -49,14 +48,12 @@ function LoginScreen({ onLogin }) {
   function handleLogin() {
     setError("");
     setLoading(true);
-    // Simula latenza di rete (rimuovi con Supabase)
-    debugger
     setTimeout(() => {
-    const user = MOCK_USERS.find(
-  u =>
-    u.email.toLowerCase() === email.trim().toLowerCase() &&
-    u.password === password.trim()
-);
+      const user = MOCK_USERS.find(
+        u =>
+          u.email.toLowerCase() === email.trim().toLowerCase() &&
+          u.password === password.trim()
+      );
       if (user) {
         const session = { id: user.id, name: user.name, email: user.email };
         setSession(session);
@@ -91,12 +88,11 @@ function LoginScreen({ onLogin }) {
     title: { fontSize: 22, fontWeight: 700, color: "#1a1a18", marginBottom: 4 },
     subtitle: { fontSize: 14, color: "#888", marginBottom: "2rem" },
     label: { fontSize: 11, fontWeight: 600, color: "#aaa", marginBottom: 5, display: "block", textTransform: "uppercase", letterSpacing: "0.06em" },
-    input: { width: "100%", padding: "11px 13px", borderRadius: 10, border: "1.5px solid #e0e0e0", fontSize: 14, fontFamily: "inherit", background: "#fafafa", color: "#1a1a18", boxSizing: "border-box", marginBottom: "1rem" },
-    btn: { width: "100%", padding: "12px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 600, background: "#1a1a18", color: "#fff", marginTop: 8, transition: "opacity .15s" },
+    input: { width: "100%", padding: "11px 13px", borderRadius: 10, border: "1.5px solid #e0e0e0", fontSize: 16, fontFamily: "inherit", background: "#fafafa", color: "#1a1a18", boxSizing: "border-box", marginBottom: "1rem" },
+    btn: { width: "100%", padding: "13px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 15, fontWeight: 600, background: "#1a1a18", color: "#fff", marginTop: 8, transition: "opacity .15s", minHeight: 48 },
     error: { background: "#FCEBEB", color: "#A32D2D", borderRadius: 10, padding: "10px 14px", fontSize: 13, marginBottom: "1rem" },
-    hint: { fontSize: 12, color: "#bbb", marginTop: "1.5rem", lineHeight: 1.6 },
     pwWrap: { position: "relative" },
-    pwToggle: { position: "absolute", right: 12, top: "50%", transform: "translateY(-70%)", background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: 13 },
+    pwToggle: { position: "absolute", right: 12, top: "50%", transform: "translateY(-70%)", background: "none", border: "none", cursor: "pointer", color: "#aaa", fontSize: 13, minHeight: 44, minWidth: 44 },
   };
 
   return (
@@ -141,8 +137,6 @@ function LoginScreen({ onLogin }) {
         <button style={{ ...S.btn, opacity: loading ? 0.6 : 1 }} onClick={handleLogin} disabled={loading}>
           {loading ? "Accesso in corso…" : "Accedi →"}
         </button>
-
-
       </div>
     </div>
   );
@@ -200,6 +194,14 @@ function MainApp({ user, onLogout }) {
   const [incomeForm, setIncomeForm] = useState("");
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
 
   useEffect(() => { saveData(user.id, data); }, [data, user.id]);
 
@@ -337,27 +339,60 @@ function MainApp({ user, onLogout }) {
     return `fino a ${MONTHS[end.month]} ${end.year}`;
   };
 
+  function navigateTo(id) {
+    setView(id);
+    if (isMobile) setSidebarOpen(false);
+  }
+
   const S = {
     root: { fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#F7F6F2", color: "#1a1a18" },
-    sidebar: { width: 220, background: "#1a1a18", minHeight: "100vh", display: "flex", flexDirection: "column", padding: "1.5rem 1rem", position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 50 },
-    main: { marginLeft: 220, padding: "2rem", maxWidth: 980 },
-    nav: (a) => ({ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, cursor: "pointer", marginBottom: 4, background: a ? "#2e2e2b" : "transparent", color: a ? "#fff" : "#888", fontSize: 14, fontWeight: a ? 500 : 400, border: "none", width: "100%", textAlign: "left", transition: "all 0.15s" }),
-    card: { background: "#fff", borderRadius: 16, padding: "1.25rem 1.5rem", border: "1px solid #ebebeb", marginBottom: "1.25rem" },
-    metricCard: (bg) => ({ background: bg || "#fff", borderRadius: 14, padding: "1.25rem", border: "1px solid #ebebeb", flex: 1, minWidth: 160 }),
-    btn: (v) => ({ padding: v === "icon" ? "7px 10px" : "10px 18px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 500, transition: "all 0.15s", whiteSpace: "nowrap",
+    sidebar: {
+      width: 220,
+      background: "#1a1a18",
+      minHeight: "100vh",
+      display: "flex",
+      flexDirection: "column",
+      padding: "1.5rem 1rem",
+      position: "fixed",
+      top: 0,
+      left: isMobile ? (sidebarOpen ? 0 : -240) : 0,
+      bottom: 0,
+      zIndex: 200,
+      transition: "left 0.25s ease",
+      boxShadow: isMobile && sidebarOpen ? "4px 0 32px rgba(0,0,0,0.35)" : "none",
+    },
+    main: {
+      marginLeft: isMobile ? 0 : 220,
+      padding: isMobile ? "1rem 0.875rem" : "2rem",
+      maxWidth: isMobile ? "100%" : 980,
+      paddingBottom: isMobile ? "2rem" : "2rem",
+    },
+    nav: (a) => ({ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 10, cursor: "pointer", marginBottom: 4, background: a ? "#2e2e2b" : "transparent", color: a ? "#fff" : "#888", fontSize: 14, fontWeight: a ? 500 : 400, border: "none", width: "100%", textAlign: "left", transition: "all 0.15s", minHeight: 44 }),
+    card: { background: "#fff", borderRadius: 16, padding: isMobile ? "1rem" : "1.25rem 1.5rem", border: "1px solid #ebebeb", marginBottom: "1.25rem" },
+    metricCard: (bg) => ({ background: bg || "#fff", borderRadius: 14, padding: "1.25rem", border: "1px solid #ebebeb", flex: 1, minWidth: isMobile ? 0 : 160 }),
+    btn: (v) => ({ padding: v === "icon" ? "7px 10px" : "10px 18px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 500, transition: "all 0.15s", whiteSpace: "nowrap", minHeight: 40,
       ...(v === "primary" ? { background: "#1a1a18", color: "#fff" } :
         v === "accent" ? { background: "#E6F1FB", color: "#185FA5" } :
         v === "danger" ? { background: "#FCEBEB", color: "#A32D2D" } :
         v === "ghost" ? { background: "transparent", color: "#555", border: "1px solid #e0e0e0" } :
-        v === "icon" ? { background: "transparent", color: "#aaa", border: "1px solid #ebebeb" } :
+        v === "icon" ? { background: "transparent", color: "#aaa", border: "1px solid #ebebeb", minWidth: 40, minHeight: 40 } :
         { background: "#F0EEE8", color: "#1a1a18" }) }),
-    input: { width: "100%", padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e0e0e0", fontSize: 14, fontFamily: "inherit", background: "#fafafa", color: "#1a1a18", boxSizing: "border-box" },
+    input: { width: "100%", padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e0e0e0", fontSize: 16, fontFamily: "inherit", background: "#fafafa", color: "#1a1a18", boxSizing: "border-box" },
     label: { fontSize: 11, fontWeight: 600, color: "#aaa", marginBottom: 5, display: "block", textTransform: "uppercase", letterSpacing: "0.06em" },
     badge: (cat) => ({ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 9px", borderRadius: 20, fontSize: 11, fontWeight: 500, background: catMap[cat]?.color + "22", color: catMap[cat]?.color }),
     recBadge: { display: "inline-flex", alignItems: "center", gap: 3, padding: "2px 8px", borderRadius: 20, fontSize: 11, background: "#E6F1FB", color: "#185FA5", fontWeight: 500 },
-    overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.32)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" },
-    modal: { background: "#fff", borderRadius: 20, padding: "2rem", width: "100%", maxWidth: 500, boxShadow: "0 20px 60px rgba(0,0,0,0.15)", maxHeight: "92vh", overflowY: "auto" },
-    toast: (t) => ({ position: "fixed", bottom: 24, right: 24, zIndex: 200, background: t === "error" ? "#A32D2D" : "#1a1a18", color: "#fff", padding: "12px 20px", borderRadius: 12, fontSize: 14, fontWeight: 500, boxShadow: "0 8px 24px rgba(0,0,0,0.18)", animation: "fadeIn .25s ease" }),
+    overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.32)", zIndex: 100, display: "flex", alignItems: isMobile ? "flex-end" : "center", justifyContent: "center", padding: isMobile ? 0 : "1rem" },
+    modal: {
+      background: "#fff",
+      borderRadius: isMobile ? "20px 20px 0 0" : 20,
+      padding: isMobile ? "1.5rem 1rem 2rem" : "2rem",
+      width: "100%",
+      maxWidth: isMobile ? "100%" : 500,
+      boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+      maxHeight: isMobile ? "92vh" : "92vh",
+      overflowY: "auto",
+    },
+    toast: (t) => ({ position: "fixed", bottom: 24, right: isMobile ? 12 : 24, left: isMobile ? 12 : "auto", zIndex: 300, background: t === "error" ? "#A32D2D" : "#1a1a18", color: "#fff", padding: "12px 20px", borderRadius: 12, fontSize: 14, fontWeight: 500, boxShadow: "0 8px 24px rgba(0,0,0,0.18)", animation: "fadeIn .25s ease", textAlign: isMobile ? "center" : "left" }),
   };
 
   return (
@@ -368,13 +403,38 @@ function MainApp({ user, onLogout }) {
         .row:hover{background:#fafaf8!important} .nav-btn:hover{background:#2e2e2b!important;color:#fff!important}
         @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#ddd;border-radius:4px} select{appearance:none}
+        @media(max-width:767px){
+          input,select,textarea{font-size:16px!important;}
+          .metric-row{flex-direction:column!important;}
+          .modal-grid-2{grid-template-columns:1fr!important;}
+          .topbar-month{min-width:130px!important;font-size:16px!important;}
+        }
       `}</style>
+
+      {/* Mobile sidebar backdrop */}
+      {isMobile && sidebarOpen && (
+        <div
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 199 }}
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
       {/* Sidebar */}
       <div style={S.sidebar}>
-        <div style={{ marginBottom: "2rem" }}>
-          <div style={{ fontSize: 18, fontWeight: 600, color: "#fff", letterSpacing: "-0.02em" }}>💰 Spesometro</div>
-          <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>Traccia le tue finanze</div>
+        <div style={{ marginBottom: "2rem", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 600, color: "#fff", letterSpacing: "-0.02em" }}>💰 Spesometro</div>
+            <div style={{ fontSize: 12, color: "#555", marginTop: 2 }}>Traccia le tue finanze</div>
+          </div>
+          {isMobile && (
+            <button
+              onClick={() => setSidebarOpen(false)}
+              style={{ background: "none", border: "none", color: "#666", fontSize: 20, cursor: "pointer", padding: "2px 4px", lineHeight: 1, marginTop: -2 }}
+              aria-label="Chiudi menu"
+            >
+              ✕
+            </button>
+          )}
         </div>
         {[
           { id: "dashboard", icon: "▦", label: "Dashboard" },
@@ -382,7 +442,7 @@ function MainApp({ user, onLogout }) {
           { id: "recurring", icon: "⟳", label: "Spese fisse", count: (data.recurring || []).length },
           { id: "stats", icon: "◉", label: "Statistiche" },
         ].map(i => (
-          <button key={i.id} className="nav-btn" onClick={() => setView(i.id)} style={S.nav(view === i.id)}>
+          <button key={i.id} className="nav-btn" onClick={() => navigateTo(i.id)} style={S.nav(view === i.id)}>
             <span style={{ fontSize: 15 }}>{i.icon}</span>
             {i.label}
             {i.count > 0 && <span style={{ marginLeft: "auto", background: "#2e2e2b", color: "#888", borderRadius: 20, fontSize: 11, padding: "1px 7px" }}>{i.count}</span>}
@@ -391,7 +451,6 @@ function MainApp({ user, onLogout }) {
 
         <div style={{ flex: 1 }} />
 
-        {/* Sezione utente in fondo alla sidebar */}
         <div style={{ borderTop: "1px solid #2a2a27", paddingTop: "1rem", marginTop: "0.5rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
             <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#2e2e2b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 600, color: "#fff", flexShrink: 0 }}>
@@ -420,21 +479,30 @@ function MainApp({ user, onLogout }) {
       {/* Main content */}
       <div style={S.main}>
         {/* Top bar */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {isMobile && (
+              <button
+                style={{ ...S.btn("icon"), fontSize: 18, padding: "7px 12px" }}
+                onClick={() => setSidebarOpen(o => !o)}
+                aria-label="Menu"
+              >
+                ☰
+              </button>
+            )}
             <button style={S.btn("icon")} onClick={() => changeMonth(-1)}>‹</button>
-            <div style={{ fontSize: 20, fontWeight: 600, minWidth: 190, textAlign: "center" }}>{MONTHS[selectedMonth]} {selectedYear}</div>
+            <div className="topbar-month" style={{ fontSize: 20, fontWeight: 600, minWidth: 190, textAlign: "center" }}>{MONTHS[selectedMonth]} {selectedYear}</div>
             <button style={S.btn("icon")} onClick={() => changeMonth(1)}>›</button>
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button style={S.btn("accent")} onClick={openAddRecurring}>⟳ Spesa fissa</button>
-            <button style={S.btn("primary")} onClick={openAdd}>+ Nuova spesa</button>
+            <button style={S.btn("accent")} onClick={openAddRecurring}>{isMobile ? "⟳" : "⟳ Spesa fissa"}</button>
+            <button style={S.btn("primary")} onClick={openAdd}>{isMobile ? "+" : "+ Nuova spesa"}</button>
           </div>
         </div>
 
         {/* ══ DASHBOARD ══ */}
         {view === "dashboard" && (<>
-          <div style={{ display: "flex", gap: 12, marginBottom: "1.25rem", flexWrap: "wrap" }}>
+          <div className="metric-row" style={{ display: "flex", gap: 12, marginBottom: "1.25rem", flexWrap: "wrap" }}>
             <div style={S.metricCard()}>
               <div style={S.label}>Entrate</div>
               {editingIncome ? (
@@ -444,7 +512,7 @@ function MainApp({ user, onLogout }) {
                   <button style={S.btn("ghost")} onClick={() => setEditingIncome(false)}>✕</button>
                 </div>
               ) : (
-                <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
                   <div style={{ fontSize: 24, fontWeight: 600, color: "#0F6E56" }}>{formatEur(income)}</div>
                   <button style={{ ...S.btn("ghost"), padding: "3px 10px", fontSize: 12 }} onClick={() => { setIncomeForm(String(income)); setEditingIncome(true); }}>modifica</button>
                 </div>
@@ -466,7 +534,7 @@ function MainApp({ user, onLogout }) {
 
           {activeRecurring.length > 0 && (
             <div style={{ ...S.card, background: "#F0F6FE", border: "1px solid #B5D4F4" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 6 }}>
                 <div style={{ fontSize: 14, fontWeight: 500, color: "#0C447C" }}>⟳ Spese fisse attive — {MONTHS[selectedMonth]}</div>
                 <div style={{ fontSize: 16, fontWeight: 600, color: "#0C447C" }}>{formatEur(totalRecurring)}</div>
               </div>
@@ -484,7 +552,7 @@ function MainApp({ user, onLogout }) {
 
           {income > 0 && (
             <div style={S.card}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 6 }}>
                 <span style={{ fontSize: 14, fontWeight: 500 }}>Utilizzo budget mensile</span>
                 <span style={{ fontSize: 13, color: "#888" }}>{formatEur(totalSpent)} / {formatEur(income)}</span>
               </div>
@@ -528,19 +596,19 @@ function MainApp({ user, onLogout }) {
               }).slice(0, 6).map(exp => (
                 <div key={exp.id} className="row" style={{ display: "flex", alignItems: "center", padding: "10px 6px", borderBottom: "1px solid #f5f4f0", gap: 10, borderRadius: 8 }}>
                   <div style={{ fontSize: 22 }}>{catMap[exp.category]?.icon}</div>
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                       <span style={{ fontSize: 14, fontWeight: 500 }}>{exp.description}</span>
                       {exp.isRecurring && <span style={S.recBadge}>⟳ fissa</span>}
                     </div>
                     <div style={{ fontSize: 12, color: "#aaa" }}>{exp.isRecurring ? "Mensile" : new Date(exp.date).toLocaleDateString("it-IT")}</div>
                   </div>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: "#A32D2D" }}>-{formatEur(exp.amount)}</div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "#A32D2D", flexShrink: 0 }}>-{formatEur(exp.amount)}</div>
                 </div>
               ))}
             </div>
           ) : (
-            <div style={{ ...S.card, textAlign: "center", padding: "3rem", color: "#aaa" }}>
+            <div style={{ ...S.card, textAlign: "center", padding: "3rem 1rem", color: "#aaa" }}>
               <div style={{ fontSize: 48, marginBottom: 12 }}>🧾</div>
               <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 6 }}>Nessuna spesa questo mese</div>
               <div style={{ fontSize: 14 }}>Aggiungi una spesa con i bottoni in alto</div>
@@ -566,8 +634,8 @@ function MainApp({ user, onLogout }) {
               <div style={{ textAlign: "center", padding: "2rem", color: "#aaa" }}>Nessuna spesa</div>
             ) : filtered.map(exp => (
               <div key={exp.id} className="row" style={{ display: "flex", alignItems: "center", padding: "12px 6px", borderBottom: "1px solid #f5f4f0", gap: 10, borderRadius: 8 }}>
-                <div style={{ fontSize: 24 }}>{catMap[exp.category]?.icon}</div>
-                <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 24, flexShrink: 0 }}>{catMap[exp.category]?.icon}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 2 }}>
                     <span style={{ fontSize: 14, fontWeight: 500 }}>{exp.description}</span>
                     <span style={S.badge(exp.category)}>{catMap[exp.category]?.label}</span>
@@ -578,7 +646,7 @@ function MainApp({ user, onLogout }) {
                     {exp.note && <span style={{ marginLeft: 8 }}>· {exp.note}</span>}
                   </div>
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: "#A32D2D", marginRight: 8 }}>-{formatEur(exp.amount)}</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: "#A32D2D", marginRight: 4, flexShrink: 0 }}>-{formatEur(exp.amount)}</div>
                 {exp.isRecurring ? (
                   <button style={S.btn("icon")} onClick={() => openEditRecurring((data.recurring || []).find(r => r.id === parseInt(exp.id.toString().replace("rec_", ""))))} title="Modifica">✎</button>
                 ) : (<>
@@ -597,7 +665,7 @@ function MainApp({ user, onLogout }) {
 
         {/* ══ RECURRING ══ */}
         {view === "recurring" && (<>
-          <div style={{ display: "flex", gap: 12, marginBottom: "1.25rem", flexWrap: "wrap" }}>
+          <div className="metric-row" style={{ display: "flex", gap: 12, marginBottom: "1.25rem", flexWrap: "wrap" }}>
             <div style={S.metricCard()}>
               <div style={S.label}>Totale spese fisse</div>
               <div style={{ fontSize: 22, fontWeight: 600, color: "#185FA5" }}>{formatEur((data.recurring || []).reduce((s, r) => s + r.amount, 0))}</div>
@@ -611,7 +679,7 @@ function MainApp({ user, onLogout }) {
           </div>
 
           {(data.recurring || []).length === 0 ? (
-            <div style={{ ...S.card, textAlign: "center", padding: "3rem", color: "#aaa" }}>
+            <div style={{ ...S.card, textAlign: "center", padding: "3rem 1rem", color: "#aaa" }}>
               <div style={{ fontSize: 48, marginBottom: 12 }}>⟳</div>
               <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 6 }}>Nessuna spesa fissa</div>
               <div style={{ fontSize: 14, marginBottom: "1.5rem" }}>Affitto, abbonamenti, rate — aggiungi spese che si ripetono ogni mese</div>
@@ -625,9 +693,9 @@ function MainApp({ user, onLogout }) {
                 const isPast = r.endMonth && r.endMonth < monthKey;
                 const isFuture = r.startMonth > monthKey;
                 return (
-                  <div key={r.id} className="row" style={{ display: "flex", alignItems: "center", padding: "14px 8px", borderBottom: "1px solid #f5f4f0", gap: 12, borderRadius: 8, opacity: isPast ? 0.5 : 1 }}>
-                    <div style={{ fontSize: 26 }}>{catMap[r.category]?.icon}</div>
-                    <div style={{ flex: 1 }}>
+                  <div key={r.id} className="row" style={{ display: "flex", alignItems: "center", padding: "14px 8px", borderBottom: "1px solid #f5f4f0", gap: 10, borderRadius: 8, opacity: isPast ? 0.5 : 1, flexWrap: isMobile ? "wrap" : "nowrap" }}>
+                    <div style={{ fontSize: 26, flexShrink: 0 }}>{catMap[r.category]?.icon}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 4 }}>
                         <span style={{ fontSize: 14, fontWeight: 500 }}>{r.description}</span>
                         <span style={S.badge(r.category)}>{catMap[r.category]?.label}</span>
@@ -640,15 +708,17 @@ function MainApp({ user, onLogout }) {
                         {r.note && <span style={{ marginLeft: 8 }}>· {r.note}</span>}
                       </div>
                     </div>
-                    <div style={{ textAlign: "right", marginRight: 8 }}>
+                    <div style={{ textAlign: "right", marginRight: 4, flexShrink: 0 }}>
                       <div style={{ fontSize: 16, fontWeight: 600, color: "#185FA5" }}>{formatEur(r.amount)}</div>
                       <div style={{ fontSize: 11, color: "#aaa" }}>/mese</div>
                     </div>
-                    <button style={S.btn("icon")} onClick={() => openEditRecurring(r)} title="Modifica">✎</button>
-                    {isActive && !r.endMonth && (
-                      <button style={{ ...S.btn("icon"), fontSize: 11, padding: "6px 9px", color: "#854F0B", border: "1px solid #FAC775" }} onClick={() => stopRecurringNow(r)} title="Termina ora">⏹</button>
-                    )}
-                    <button style={{ ...S.btn("icon"), color: "#A32D2D" }} onClick={() => deleteRecurring(r.id)} title="Elimina">✕</button>
+                    <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                      <button style={S.btn("icon")} onClick={() => openEditRecurring(r)} title="Modifica">✎</button>
+                      {isActive && !r.endMonth && (
+                        <button style={{ ...S.btn("icon"), fontSize: 11, padding: "6px 9px", color: "#854F0B", border: "1px solid #FAC775" }} onClick={() => stopRecurringNow(r)} title="Termina ora">⏹</button>
+                      )}
+                      <button style={{ ...S.btn("icon"), color: "#A32D2D" }} onClick={() => deleteRecurring(r.id)} title="Elimina">✕</button>
+                    </div>
                   </div>
                 );
               })}
@@ -660,11 +730,11 @@ function MainApp({ user, onLogout }) {
         {view === "stats" && (<>
           <div style={S.card}>
             <div style={{ fontSize: 15, fontWeight: 500, marginBottom: "1rem" }}>Riepilogo {MONTHS[selectedMonth]}</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(140px,1fr))", gap: 12 }}>
               {byCategory.map(cat => (
                 <div key={cat.id} style={{ display: "flex", alignItems: "center", gap: 10, background: "#fafaf8", padding: "12px 14px", borderRadius: 12 }}>
                   <div style={{ fontSize: 28 }}>{cat.icon}</div>
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 13, color: "#888" }}>{cat.label}</div>
                     <div style={{ fontSize: 16, fontWeight: 600 }}>{formatEur(cat.total)}</div>
                     <div style={{ fontSize: 11, color: "#bbb" }}>{cat.count} voci · avg {formatEur(cat.total / cat.count)}</div>
@@ -680,11 +750,11 @@ function MainApp({ user, onLogout }) {
                 const pct = cat.total / totalSpent * 100;
                 return (
                   <div key={cat.id} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                    <div style={{ width: 22, textAlign: "center" }}>{cat.icon}</div>
+                    <div style={{ width: 22, textAlign: "center", flexShrink: 0 }}>{cat.icon}</div>
                     <div style={{ flex: 1, height: 8, background: "#f0ede8", borderRadius: 99, overflow: "hidden" }}>
                       <div style={{ height: "100%", width: `${pct.toFixed(1)}%`, background: cat.color, borderRadius: 99 }} />
                     </div>
-                    <div style={{ fontSize: 12, width: 44, textAlign: "right", color: "#666" }}>{pct.toFixed(0)}%</div>
+                    <div style={{ fontSize: 12, width: 44, textAlign: "right", color: "#666", flexShrink: 0 }}>{pct.toFixed(0)}%</div>
                   </div>
                 );
               })}
@@ -705,7 +775,7 @@ function MainApp({ user, onLogout }) {
                   <div style={{ flex: 1, height: 8, background: "#f0ede8", borderRadius: 99, overflow: "hidden" }}>
                     <div style={{ height: "100%", width: `${(total / max * 100).toFixed(1)}%`, background: "#1a1a18", borderRadius: 99 }} />
                   </div>
-                  <div style={{ fontSize: 12, fontWeight: 500, width: 72, textAlign: "right" }}>{formatEur(total)}</div>
+                  <div style={{ fontSize: 12, fontWeight: 500, width: 72, textAlign: "right", flexShrink: 0 }}>{formatEur(total)}</div>
                 </div>
               ));
             })()}
@@ -720,7 +790,7 @@ function MainApp({ user, onLogout }) {
             <div style={{ fontSize: 18, fontWeight: 600, marginBottom: "1.5rem" }}>{editingExpense ? "Modifica spesa" : "Nuova spesa"}</div>
             <div style={{ display: "grid", gap: 14 }}>
               <div><label style={S.label}>Descrizione</label><input style={S.input} placeholder="es. Spesa al supermercato" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} autoFocus /></div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div className="modal-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div><label style={S.label}>Importo (€)</label><input style={S.input} placeholder="0.00" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} /></div>
                 <div><label style={S.label}>Data</label><input type="date" style={S.input} value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
               </div>
@@ -743,16 +813,16 @@ function MainApp({ user, onLogout }) {
             <div style={{ fontSize: 13, color: "#aaa", marginBottom: "1.5rem" }}>Affitti, abbonamenti, rate — si aggiunge automaticamente ogni mese</div>
             <div style={{ display: "grid", gap: 14 }}>
               <div><label style={S.label}>Descrizione</label><input style={S.input} placeholder="es. Affitto, Netflix, Rata mutuo..." value={rForm.description} onChange={e => setRForm(f => ({ ...f, description: e.target.value }))} autoFocus /></div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div className="modal-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div><label style={S.label}>Importo mensile (€)</label><input style={S.input} placeholder="0.00" value={rForm.amount} onChange={e => setRForm(f => ({ ...f, amount: e.target.value }))} /></div>
                 <div><label style={S.label}>Categoria</label><select style={S.input} value={rForm.category} onChange={e => setRForm(f => ({ ...f, category: e.target.value }))}>{CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}</select></div>
               </div>
               <div><label style={S.label}>Mese di inizio</label><input type="month" style={S.input} value={rForm.startMonth} onChange={e => setRForm(f => ({ ...f, startMonth: e.target.value }))} /></div>
               <div>
                 <label style={S.label}>Durata</label>
-                <div style={{ display: "flex", gap: 10 }}>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                   {[{ v: "ongoing", l: "♾ Senza scadenza" }, { v: "fixed", l: "📅 N mesi fissi" }].map(opt => (
-                    <label key={opt.v} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${rForm.duration === opt.v ? "#1a1a18" : "#e0e0e0"}`, cursor: "pointer", flex: 1, fontSize: 13, fontWeight: rForm.duration === opt.v ? 500 : 400, background: rForm.duration === opt.v ? "#f5f4f0" : "#fafafa" }}>
+                    <label key={opt.v} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${rForm.duration === opt.v ? "#1a1a18" : "#e0e0e0"}`, cursor: "pointer", flex: 1, fontSize: 13, fontWeight: rForm.duration === opt.v ? 500 : 400, background: rForm.duration === opt.v ? "#f5f4f0" : "#fafafa", minWidth: 120 }}>
                       <input type="radio" name="dur" value={opt.v} checked={rForm.duration === opt.v} onChange={() => setRForm(f => ({ ...f, duration: opt.v }))} style={{ accentColor: "#1a1a18" }} />
                       {opt.l}
                     </label>
